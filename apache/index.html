@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Docker Lab — Ticket System</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: monospace;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+    header {
+      border-bottom: 1px solid #45475a;
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    header h1 { font-size: 1.4rem; color: #cba6f7; }
+    header p  { font-size: 0.85rem; color: #6c7086; margin-top: 0.25rem; }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      margin-top: 0.75rem;
+    }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #6c7086;
+      display: inline-block;
+    }
+    .dot.healthy   { background: #a6e3a1; }
+    .dot.unhealthy { background: #f38ba8; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+
+    section h2 {
+      font-size: 1rem;
+      color: #89b4fa;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Ticket list */
+    #ticket-list { list-style: none; }
+
+    #ticket-list li {
+      background: #313244;
+      border-left: 3px solid #89b4fa;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.5rem;
+      border-radius: 0 4px 4px 0;
+    }
+
+    #ticket-list li .title { font-weight: bold; color: #cdd6f4; }
+    #ticket-list li .meta  { font-size: 0.75rem; color: #6c7086; margin-top: 0.25rem; }
+    #ticket-list li .desc  { font-size: 0.85rem; color: #a6adc8; margin-top: 0.25rem; }
+
+    .empty { color: #6c7086; font-size: 0.85rem; font-style: italic; }
+
+    /* Form */
+    form { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    label { font-size: 0.8rem; color: #6c7086; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    input, textarea {
+      background: #313244;
+      border: 1px solid #45475a;
+      color: #cdd6f4;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #89b4fa;
+    }
+
+    textarea { resize: vertical; min-height: 80px; }
+
+    button {
+      background: #89b4fa;
+      color: #1e1e2e;
+      border: none;
+      padding: 0.6rem 1.25rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      align-self: flex-start;
+    }
+
+    button:hover    { background: #b4befe; }
+    button:disabled { background: #45475a; color: #6c7086; cursor: not-allowed; }
+
+    #form-msg {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 4px;
+      display: none;
+    }
+    #form-msg.success { background: #1e3a2e; color: #a6e3a1; display: block; }
+    #form-msg.error   { background: #3a1e1e; color: #f38ba8; display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Docker Lab - Ticket System</h1>
+  <p>Three-tier application: Apache &rarr; Flask &rarr; MariaDB</p>
+  <div class="status-bar">
+    <span class="dot" id="health-dot"></span>
+    <span id="health-text">Checking API&hellip;</span>
+  </div>
+</header>
+
+<div class="grid">
+
+  <section>
+    <h2>Tickets</h2>
+    <ul id="ticket-list"><li class="empty">Loading&hellip;</li></ul>
+  </section>
+
+  <section>
+    <h2>New Ticket</h2>
+    <form id="ticket-form">
+      <div>
+        <label for="title">Title *</label>
+        <input type="text" id="title" placeholder="Brief summary" required />
+      </div>
+      <div>
+        <label for="description">Description</label>
+        <textarea id="description" placeholder="Details (optional)"></textarea>
+      </div>
+      <button type="submit" id="submit-btn">Submit Ticket</button>
+      <div id="form-msg"></div>
+    </form>
+  </section>
+
+</div>
+
+<script>
+  const healthDot  = document.getElementById('health-dot');
+  const healthText = document.getElementById('health-text');
+  const ticketList = document.getElementById('ticket-list');
+  const form       = document.getElementById('ticket-form');
+  const submitBtn  = document.getElementById('submit-btn');
+  const formMsg    = document.getElementById('form-msg');
+
+  async function checkHealth() {
+    try {
+      const res  = await fetch('/health');
+      const data = await res.json();
+      if (data.status === 'healthy') {
+        healthDot.className    = 'dot healthy';
+        healthText.textContent = 'API healthy \u2014 database connected';
+      } else {
+        healthDot.className    = 'dot unhealthy';
+        healthText.textContent = 'API unhealthy: ' + (data.error || 'unknown error');
+      }
+    } catch {
+      healthDot.className    = 'dot unhealthy';
+      healthText.textContent = 'Cannot reach API';
+    }
+  }
+
+  async function loadTickets() {
+    try {
+      const res     = await fetch('/api/tickets');
+      const tickets = await res.json();
+      if (!tickets.length) {
+        ticketList.innerHTML = '<li class="empty">No tickets yet.</li>';
+        return;
+      }
+      ticketList.innerHTML = tickets.map(t => `
+        <li>
+          <div class="title">#${t.id} \u2014 ${escHtml(t.title)}</div>
+          ${t.description ? `<div class="desc">${escHtml(t.description)}</div>` : ''}
+          <div class="meta">${escHtml(t.status)} &middot; ${t.created_at || ''}</div>
+        </li>
+      `).join('');
+    } catch {
+      ticketList.innerHTML = '<li class="empty">Failed to load tickets.</li>';
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    submitBtn.disabled    = true;
+    formMsg.className     = '';
+    formMsg.style.display = 'none';
+
+    const payload = {
+      title:       document.getElementById('title').value.trim(),
+      description: document.getElementById('description').value.trim(),
+    };
+
+    try {
+      const res  = await fetch('/api/tickets', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        formMsg.textContent = 'Ticket #' + data.id + ' created.';
+        formMsg.className   = 'success';
+        form.reset();
+        loadTickets();
+      } else {
+        formMsg.textContent = data.error || 'Failed to create ticket.';
+        formMsg.className   = 'error';
+      }
+    } catch {
+      formMsg.textContent = 'Network error \u2014 could not reach API.';
+      formMsg.className   = 'error';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  checkHealth();
+  loadTickets();
+</script>
+
+</body>
+</html>

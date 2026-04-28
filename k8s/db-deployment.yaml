@@ -16,7 +16,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: ___          # FILL IN: 1Gi
+      storage: 1Gi          # FILL IN: 1Gi
 
 ---
 
@@ -26,32 +26,32 @@ metadata:
   name: db
   namespace: ticket-app
 spec:
-  replicas: ___             # FILL IN: 1
+  replicas: 1             # FILL IN: 1
   selector:
     matchLabels:
-      app: ___              # FILL IN: db
+      app: db              # FILL IN: db
   template:
     metadata:
       labels:
-        app: ___            # FILL IN: db  (must match matchLabels above)
+        app: db            # FILL IN: db  (must match matchLabels above)
     spec:
       containers:
         - name: db
           image: mariadb:11
           ports:
-            - containerPort: ___ # FILL IN: 3306
+            - containerPort: 3306 # FILL IN: 3306
           envFrom:
             - secretRef:
-                name: ___   # FILL IN: db-credentials
+                name: db-credentials   # FILL IN: db-credentials
           volumeMounts:
             - name: db-storage
-              mountPath: ___ # FILL IN: /var/lib/mysql
+              mountPath: /var/lib/mysql # FILL IN: /var/lib/mysql
             - name: db-init
               mountPath: /docker-entrypoint-initdb.d
       volumes:
         - name: db-storage
           persistentVolumeClaim:
-            claimName: ___  # FILL IN: db-pvc
+            claimName: db-pvc  # FILL IN: db-pvc
         - name: db-init
           configMap:
             name: db-init
@@ -65,7 +65,7 @@ metadata:
   namespace: ticket-app
 spec:
   selector:
-    app: ___                # FILL IN: db
+    app: db                # FILL IN: db
   ports:
-    - port: ___             # FILL IN: 3306
-      targetPort: ___       # FILL IN: 3306
+    - port: 3306             # FILL IN: 3306
+      targetPort: 3306       # FILL IN: 3306

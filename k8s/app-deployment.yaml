@@ -12,23 +12,23 @@ metadata:
   name: app
   namespace: ticket-app
 spec:
-  replicas: ___             # FILL IN: 1
+  replicas: 1             # FILL IN: 1
   selector:
     matchLabels:
-      app: ___              # FILL IN: app
+      app: app              # FILL IN: app
   template:
     metadata:
       labels:
-        app: ___            # FILL IN: app  (must match matchLabels above)
+        app: app           # FILL IN: app  (must match matchLabels above)
     spec:
       containers:
         - name: app
-          image: ___        # FILL IN: YOUR_DOCKERHUB_USERNAME/flask-app:latest
+          image: roscoebell/flask-app:latest        # FILL IN: YOUR_DOCKERHUB_USERNAME/flask-app:latest
           ports:
-            - containerPort: ___ # FILL IN: 5000
+            - containerPort: 5000 # FILL IN: 5000
           envFrom:
             - secretRef:
-                name: ___   # FILL IN: db-credentials
+                name: db-credentials   # FILL IN: db-credentials
 
 ---
 
@@ -39,7 +39,7 @@ metadata:
   namespace: ticket-app
 spec:
   selector:
-    app: ___                # FILL IN: app
+    app: app                # FILL IN: app
   ports:
-    - port: ___             # FILL IN: 5000
-      targetPort: ___       # FILL IN: 5000
+    - port: 5000             # FILL IN: 5000
+      targetPort: 5000       # FILL IN: 5000
