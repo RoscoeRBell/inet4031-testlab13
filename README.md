@@ -214,4 +214,4 @@ All checks should pass before submission.
 
 ## Reflection
 
-This lab showed the difference between running containers and orchestrating containers. Docker Compose is simpler, but Kubernetes adds stronger reliability, self-healing, service discovery, and deployment control. The most important concept was desired state: Kubernetes continuously works to keep the running application matched to the configuration defined in the YAML manifests.
+This lab showed the difference between running containers and orchestrating containers. Docker Compose is simpler and lighter, but Kubernetes adds stronger reliability, self-healing, service discovery, and deployment control. The most important concept was desired state: Kubernetes continuously works to keep the running application matched to the configuration defined in the YAML manifests.
